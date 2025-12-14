@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ApiTest.Data;
 using ApiTest.Models;
+using ApiTest.DTOs;
 
 namespace ApiTest.Controllers
 {
@@ -19,17 +20,30 @@ namespace ApiTest.Controllers
 
         // Devuelve todos los estudiantes
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Student>>> GetStudents()
+        public async Task<ActionResult<IEnumerable<StudentDTO>>> GetStudents()
         {
-            // Devuelve la lista de estudiantes desde la base de datos
-            return await _context.Students.ToListAsync();
+        var students = await _context.Students
+            .Select(s => new StudentDTO
+            {
+                Id = s.Id,
+                Name = s.Name
+            })
+            .ToListAsync();
+            return students;
         }
 
         // Devuelve un estudiante específico por Id
         [HttpGet("{id}")]
-        public async Task<ActionResult<Student>> GetStudent(int id)
+        public async Task<ActionResult<StudentDTO>> GetStudent(int id)
         {
-            var student = await _context.Students.FindAsync(id);
+            var student = await _context.Students
+                .Where(s=>s.Id==id)
+                .Select(s=>new StudentDTO
+                {
+                    Id = s.Id,
+                    Name = s.Name
+                })
+                .FirstOrDefaultAsync();
 
             // Si no existe, devuelve 404 Not Found
             if (student == null)
@@ -42,38 +56,63 @@ namespace ApiTest.Controllers
 
         // Devuelve una lista de estudiantes con el mismo nombre
         [HttpGet ("by-name/{name}")]
-        public async Task<ActionResult<IEnumerable<Student>>> GetStudents_name (string name)
+        public async Task<ActionResult<IEnumerable<StudentDTO>>> GetStudents_name (string name)
         {            
-            var students = await _context.Students.Where(s=>s.Name == name).ToListAsync();
+            var students = await _context.Students
+                .Where(s=>s.Name == name)
+                .Select(s=>new StudentDTO
+                {
+                    Id = s.Id,
+                    Name = s.Name
+                })
+                .ToListAsync();
             return students;
         }
 
         // Crea un nuevo estudiante
         [HttpPost]
-        public async Task<ActionResult<Student>> PostStudent(Student student)
+        public async Task<ActionResult<StudentDTO>> PostStudent(CreateStudentDTO studentDTO)
         {
+            //Crear al student
+            var student = new Student
+            {
+                Name = studentDTO.Name
+            };
             // Agrega el estudiante al DbContext
             _context.Students.Add(student);
             
             // Guarda los cambios en la base de datos
             await _context.SaveChangesAsync();
 
+            var dto = new StudentDTO
+            {
+                Id = student.Id,
+                Name = student.Name
+            };
+
             // Devuelve 201 Created (creado correctamente) con la ruta del nuevo recurso
-            return CreatedAtAction(nameof(GetStudent), new { id = student.Id }, student);
+            return CreatedAtAction(nameof(GetStudent), new { id = student.Id }, dto);
         }
 
         // Actualiza un estudiante existente
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutStudent(int id, Student student)
+        public async Task<IActionResult> PutStudent(int id, UpdateStudentDTO studentDTO)
         {
             // Validación: si el id de la ruta no coincide con el objeto, devuelve 400
-            if (id != student.Id)
+            if (id != studentDTO.Id)
             {
                 return BadRequest();
             }
 
-            // Marca la entidad como modificada para EF Core
-            _context.Entry(student).State = EntityState.Modified;
+            /// Buscar el student existente
+            var student = await _context.Students.FirstOrDefaultAsync(s => s.Id == id);
+            if (student == null)
+            {
+                return NotFound();
+            }
+
+            //Mapear los campos del DTO a la entidad
+            student.Name = studentDTO.Name;
 
             try
             {
