@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ApiTest.Data;
+using FastEndpoints;
+using FastEndpoints.Swagger;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,8 +13,8 @@ var conectionString = builder.Configuration.GetConnectionString(conection);
 //AddContext
 builder.Services.AddDbContext<ApiTestContext>(options => options.UseNpgsql(conectionString));
 
-//AddControllers
-builder.Services.AddControllers();
+//AddFastEndpoint
+builder.Services.AddFastEndpoints();
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -28,7 +30,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapControllers();
+app.UseFastEndpoints();
+app.UseSwaggerGen();
 
 var summaries = new[]
 {
