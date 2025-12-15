@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ApiTest.Endpoints.Students
 {
-    public class GetStudentEndpoint : Endpoint<int, StudentDTO>
+    public class GetStudentEndpoint : EndpointWithoutRequest<StudentDTO>
     {
         private readonly ApiTestContext _context;
 
@@ -22,8 +22,10 @@ namespace ApiTest.Endpoints.Students
             AllowAnonymous();
         }
 
-        public override async Task HandleAsync(int id, CancellationToken ct)
+        public override async Task HandleAsync(CancellationToken ct)
         {
+            var id = Route<int>("id");
+
             var student = await _context.Students
                 .Where(s => s.Id == id)
                 .Select(s => new StudentDTO

@@ -30,7 +30,8 @@ namespace ApiTest.Endpoints.Courses
 
             if (id != req.Id)
             {
-                await Send.NotFoundAsync(ct);
+                AddError("El id de la ruta no coincide con el id del objeto");
+                await Send.ErrorsAsync(400, ct);
                 return;
             }
 

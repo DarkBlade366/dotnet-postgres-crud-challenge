@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ApiTest.Endpoints.Students
 {
-    public class GetStudentsByNameEndpoint : Endpoint<string, List<StudentDTO>>
+    public class GetStudentsByNameEndpoint : EndpointWithoutRequest<List<StudentDTO>>
     {
         private readonly ApiTestContext _context;
 
@@ -24,8 +24,10 @@ namespace ApiTest.Endpoints.Students
             AllowAnonymous();
         }
 
-        public override async Task HandleAsync(string name, CancellationToken ct)
+        public override async Task HandleAsync(CancellationToken ct)
         {
+            var name = Route<string>("name");   
+
             var students = await _context.Students
                 .Where(s => s.Name == name)
                 .Select(s => new StudentDTO
